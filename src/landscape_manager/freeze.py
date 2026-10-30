@@ -5,8 +5,9 @@ boots a fresh temporary database, seeds only the fictional demo data, and
 crawls the app with Flask's test client. Real business data cannot be frozen
 by mistake.
 
-Output layout (``docs/`` by default, the GitHub Pages source for a project
-repo):
+Output layout (``docs/`` by default for a local preview; CI freezes to
+``frozen-demo/`` and deploys that as the GitHub Pages artifact, so
+generated output is never committed):
 
 - Every page as ``<path>/index.html`` (``/`` as ``index.html``).
 - Static assets copied to ``static/``.

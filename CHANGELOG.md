@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.3.0 — 2026-10-30
+
+- GitHub Pages is now CI-generated, replacing the manually committed
+  `docs/` output (supersedes v1.2.0's Pages instructions). New
+  `.github/workflows/pages.yml` runs on push to `main` and on manual
+  dispatch: install, ruff, pytest, freeze to `frozen-demo/`, then
+  `configure-pages` / `upload-pages-artifact` / `deploy-pages` with
+  `contents: read`, `pages: write`, `id-token: write`. `docs/` and
+  `frozen-demo/` are now gitignored, so generated output is never
+  committed. After push, set Pages source to **GitHub Actions** in repo
+  Settings (not `main` / `docs`).
+
 ## 1.2.0 — 2026-10-30
 
 - Frozen static demo for GitHub Pages: `landscape-manager freeze` (or

@@ -8,3 +8,6 @@ venv/
 build/
 dist/
 .pytest_cache/
+# Generated frozen demo output — built by CI on push, never committed.
+docs/
+frozen-demo/
