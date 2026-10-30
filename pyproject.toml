@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "landscape-manager"
+version = "1.0.0"
+description = "Generalized web app for running a landscaping business: clients, properties, services, jobs, quotes, and invoices."
+readme = "README.md"
+license = { text = "MIT" }
+authors = [{ name = "enonymous1" }]
+requires-python = ">=3.11"
+dependencies = ["Flask>=3.0"]
+
+[project.scripts]
+landscape-manager = "landscape_manager.__main__:main"
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "ruff>=0.6"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+landscape_manager = ["templates/*.html", "static/*"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

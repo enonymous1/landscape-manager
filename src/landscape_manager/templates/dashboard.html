@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Dashboard</h1>
+<div class="card">
+<p>{{ counts.clients }} clients · {{ counts.jobs }} jobs · {{ counts.quotes }} quotes · {{ counts.invoices }} invoices</p>
+<p>Unpaid invoices total: <strong>{{ format_money(unpaid_total) }}</strong></p>
+</div>
+<h2>Today's jobs</h2>
+{% if todays %}<ul>{% for j in todays %}<li><a href="{{ url_for('job_detail', job_id=j.id) }}">{{ j.service_name }}</a> — {{ j.client_name }} ({{ j.property_label }}) — {{ j.status }}</li>{% endfor %}</ul>
+{% else %}<p>No jobs scheduled today.</p>{% endif %}
+<h2>Upcoming (next 7 days)</h2>
+{% if upcoming %}<ul>{% for j in upcoming %}<li>{{ j.scheduled_date }} — {{ j.service_name }} — {{ j.client_name }}</li>{% endfor %}</ul>
+{% else %}<p>Nothing upcoming in the next 7 days.</p>{% endif %}
+<h2>Overdue</h2>
+{% if overdue %}<ul>{% for j in overdue %}<li class="overdue">{{ j.scheduled_date }} — {{ j.service_name }} — {{ j.client_name }} — {{ j.status }}</li>{% endfor %}</ul>
+{% else %}<p>No overdue jobs.</p>{% endif %}
+<p><a class="btn" href="{{ url_for('job_new') }}">Schedule a job</a> <a class="btn" href="{{ url_for('client_new') }}">Add a client</a></p>
+{% endblock %}

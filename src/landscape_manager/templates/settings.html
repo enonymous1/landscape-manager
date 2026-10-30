@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Settings</h1>
+<form method="post">
+<label>Business name <input name="business_name" value="{{ business_name }}"></label>
+<button type="submit">Save settings</button>
+</form>
+<p>This name appears in the header. Data is stored locally in SQLite; there is no login or online payment in v1.</p>
+{% endblock %}

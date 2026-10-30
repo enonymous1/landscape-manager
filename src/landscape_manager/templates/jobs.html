@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Jobs</h1>
+<p><a class="btn" href="{{ url_for('job_new') }}">Schedule a job</a>
+<a href="{{ url_for('jobs') }}">All</a> · <a href="{{ url_for('jobs', status='scheduled') }}">Scheduled</a> · <a href="{{ url_for('jobs', status='done') }}">Done</a></p>
+<table><tr><th>Date</th><th>Service</th><th>Client</th><th>Property</th><th>Status</th></tr>
+{% for j in jobs %}<tr><td><a href="{{ url_for('job_detail', job_id=j.id) }}">{{ j.scheduled_date }}</a></td><td>{{ j.service_name }}</td><td>{{ j.client_name }}</td><td>{{ j.property_label }}</td><td>{{ j.status }}</td></tr>{% endfor %}
+</table>
+{% endblock %}

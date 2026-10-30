@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>{{ client.name }}</h1>
+<p>{{ client.phone }} · {{ client.email }}<br>{{ client.address }}</p>
+{% if client.notes %}<p>{{ client.notes }}</p>{% endif %}
+<p><a class="btn" href="{{ url_for('client_edit', client_id=client.id) }}">Edit</a>
+<a class="btn" href="{{ url_for('property_new', client_id=client.id) }}">Add property</a></p>
+<form method="post" action="{{ url_for('client_delete', client_id=client.id) }}" onsubmit="return confirm('Delete this client?')"><button type="submit">Delete client</button></form>
+<h2>Properties</h2>
+<ul>{% for p in properties %}<li>{{ p.label }} — {{ p.address }} <a href="{{ url_for('property_edit', property_id=p.id) }}">Edit</a></li>{% else %}<li>No properties yet.</li>{% endfor %}</ul>
+<h2>Quotes</h2>
+<ul>{% for q in quotes %}<li><a href="{{ url_for('quote_detail', quote_id=q.id) }}">Quote #{{ q.id }}</a> — {{ q.status }}</li>{% else %}<li>No quotes yet.</li>{% endfor %}</ul>
+<h2>Invoices</h2>
+<ul>{% for i in invoices %}<li><a href="{{ url_for('invoice_detail', invoice_id=i.id) }}">Invoice #{{ i.id }}</a> — {{ i.status }}</li>{% else %}<li>No invoices yet.</li>{% endfor %}</ul>
+{% endblock %}

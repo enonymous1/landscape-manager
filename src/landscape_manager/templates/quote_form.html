@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>New quote</h1>
+<form method="post">
+<label>Client <select name="client_id" required>{% for c in clients %}<option value="{{ c.id }}">{{ c.name }}</option>{% endfor %}</select></label>
+<label>Property <select name="property_id"><option value="">— none —</option>{% for p in properties %}<option value="{{ p.id }}">{{ p.client_name }} — {{ p.label }}</option>{% endfor %}</select></label>
+<label>Notes <textarea name="notes"></textarea></label>
+<button type="submit">Create quote</button>
+</form>
+<p>Then add line items on the quote page.</p>
+{% endblock %}

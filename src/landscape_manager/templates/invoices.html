@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Invoices</h1>
+<p><a class="btn" href="{{ url_for('invoice_new') }}">New invoice</a></p>
+<table><tr><th>ID</th><th>Client</th><th>Status</th><th>Due</th><th>Total</th></tr>
+{% for i in invoices %}<tr><td><a href="{{ url_for('invoice_detail', invoice_id=i.id) }}">#{{ i.id }}</a></td><td>{{ i.client_name }}</td><td>{{ i.status }}{% if i.overdue %} <span class="overdue">overdue</span>{% endif %}</td><td>{{ i.due_date }}</td><td>{{ format_money(i.total) }}</td></tr>{% endfor %}
+</table>
+{% endblock %}

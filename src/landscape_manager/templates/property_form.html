@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>{% if property %}Edit property{% else %}Add property{% endif %}</h1>
+<form method="post">
+{% if not property %}<label>Client <select name="client_id" required>{% for c in clients %}<option value="{{ c.id }}" {% if selected == c.id|string %}selected{% endif %}>{{ c.name }}</option>{% endfor %}</select></label>{% endif %}
+<label>Label <input name="label" value="{{ property.label if property else 'Home' }}" required></label>
+<label>Address <input name="address" value="{{ property.address if property else '' }}"></label>
+<label>Notes <textarea name="notes">{{ property.notes if property else '' }}</textarea></label>
+<button type="submit">Save property</button>
+</form>
+{% endblock %}

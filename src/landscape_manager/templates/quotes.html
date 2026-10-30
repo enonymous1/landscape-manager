@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Quotes</h1>
+<p><a class="btn" href="{{ url_for('quote_new') }}">New quote</a></p>
+<table><tr><th>ID</th><th>Client</th><th>Status</th><th>Created</th></tr>
+{% for q in quotes %}<tr><td><a href="{{ url_for('quote_detail', quote_id=q.id) }}">#{{ q.id }}</a></td><td>{{ q.client_name }}</td><td>{{ q.status }}</td><td>{{ q.created_date }}</td></tr>{% endfor %}
+</table>
+{% endblock %}

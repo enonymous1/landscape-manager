@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Services</h1>
+<table><tr><th>Name</th><th>Description</th><th>Price</th><th>Unit</th></tr>
+{% for s in services %}<tr><td>{{ s.name }}</td><td>{{ s.description }}</td><td>{{ format_money(s.price_cents) }}</td><td>{{ s.unit }}</td></tr>{% endfor %}
+</table>
+<h2>Add service</h2>
+<form method="post">
+<label>Name <input name="name" required></label>
+<label>Description <input name="description"></label>
+<label>Price (dollars) <input name="price" value="0"></label>
+<label>Unit <input name="unit" value="per visit"></label>
+<button type="submit">Add service</button>
+</form>
+{% endblock %}

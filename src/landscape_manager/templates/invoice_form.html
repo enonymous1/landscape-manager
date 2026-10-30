@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>New invoice</h1>
+<form method="post">
+<label>Client <select name="client_id" required>{% for c in clients %}<option value="{{ c.id }}">{{ c.name }}</option>{% endfor %}</select></label>
+<label>Property <select name="property_id"><option value="">— none —</option>{% for p in properties %}<option value="{{ p.id }}">{{ p.client_name }} — {{ p.label }}</option>{% endfor %}</select></label>
+<label>Due date <input type="date" name="due_date"></label>
+<button type="submit">Create invoice</button>
+</form>
+<p>Then add line items on the invoice page.</p>
+{% endblock %}

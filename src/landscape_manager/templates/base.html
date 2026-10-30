@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ business_name }} — Landscape Manager</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<header>
+  <strong>{{ business_name }}</strong>
+  <nav>
+    <a href="{{ url_for('dashboard') }}">Dashboard</a>
+    <a href="{{ url_for('clients') }}">Clients</a>
+    <a href="{{ url_for('jobs') }}">Jobs</a>
+    <a href="{{ url_for('services') }}">Services</a>
+    <a href="{{ url_for('quotes') }}">Quotes</a>
+    <a href="{{ url_for('invoices') }}">Invoices</a>
+    <a href="{{ url_for('settings') }}">Settings</a>
+  </nav>
+</header>
+<main>
+{% with messages = get_flashed_messages() %}
+{% if messages %}<ul class="flash">{% for m in messages %}<li>{{ m }}</li>{% endfor %}</ul>{% endif %}
+{% endwith %}
+{% block content %}{% endblock %}
+</main>
+</body>
+</html>

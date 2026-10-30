@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Schedule a job</h1>
+<form method="post">
+<label>Property <select name="property_id" required>{% for p in properties %}<option value="{{ p.id }}">{{ p.client_name }} — {{ p.label }} ({{ p.address }})</option>{% endfor %}</select></label>
+<label>Service <select name="service_id" required>{% for s in services %}<option value="{{ s.id }}">{{ s.name }} — {{ format_money(s.price_cents) }} {{ s.unit }}</option>{% endfor %}</select></label>
+<label>Date <input type="date" name="scheduled_date" required></label>
+<label>Recurrence <select name="recurrence"><option value="none">One-off</option><option value="weekly">Weekly</option><option value="biweekly">Every two weeks</option><option value="monthly">Monthly</option></select></label>
+<label>Status <select name="status"><option value="scheduled">Scheduled</option><option value="in_progress">In progress</option><option value="done">Done</option><option value="cancelled">Cancelled</option></select></label>
+<label>Notes <textarea name="notes"></textarea></label>
+<button type="submit">Save job</button>
+</form>
+{% endblock %}
