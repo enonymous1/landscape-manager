@@ -88,7 +88,7 @@ def init_db(conn: sqlite3.Connection) -> None:
     conn.executescript(SCHEMA)
     conn.execute(
         "INSERT OR IGNORE INTO settings (key, value) VALUES ('business_name', ?)",
-        ("Sun & Shade Landscaping",),
+        ("Landscaping",),
     )
     conn.commit()
 

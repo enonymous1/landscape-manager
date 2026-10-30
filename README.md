@@ -23,6 +23,8 @@ ported. This version pivots to the web, per the owner's direction.
   quantities, totals in integer cents. A quote converts to an invoice
   (due in 30 days) with its items copied over; invoices can be marked paid.
 - **Settings** — change the business name shown in the header.
+- **Theme** — Auto by default (follows your system), with a header picker
+  for Light / Dark saved per browser.
 
 Deliberately out of v1: login/multi-user roles, online payments, and a
 customer portal. Data is stored locally in SQLite.

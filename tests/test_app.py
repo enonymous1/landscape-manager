@@ -17,10 +17,21 @@ def client(tmp_path):
         yield test_client
 
 
-def test_dashboard_shows_demo_business(client):
+def test_dashboard_shows_generic_business_name(client):
     response = client.get("/")
     assert response.status_code == 200
-    assert b"Sun &amp; Shade Landscaping" in response.data or b"Sun" in response.data
+    assert b"Landscaping" in response.data
+    assert b"Sun" not in response.data
+
+
+def test_theme_picker_and_dark_css_present(client):
+    page = client.get("/")
+    assert b'id="theme-picker"' in page.data
+    assert b"landscape-theme" in page.data
+    css = client.get("/static/style.css")
+    assert css.status_code == 200
+    assert b"prefers-color-scheme: dark" in css.data
+    assert b'[data-theme="dark"]' in css.data
 
 
 def test_create_client_and_property_flow(client):
