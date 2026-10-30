@@ -24,6 +24,16 @@ def test_dashboard_shows_generic_business_name(client):
     assert b"Sun" not in response.data
 
 
+def test_secret_key_comes_from_env_or_is_random(monkeypatch):
+    monkeypatch.setenv("LANDSCAPE_SECRET_KEY", "test-only-key-123")
+    app = create_app({"DATABASE": ":memory:"})
+    assert app.config["SECRET_KEY"] == "test-only-key-123"
+    monkeypatch.delenv("LANDSCAPE_SECRET_KEY")
+    app2 = create_app({"DATABASE": ":memory:"})
+    assert app2.config["SECRET_KEY"] != "dev-only-change-me"
+    assert len(app2.config["SECRET_KEY"]) >= 32
+
+
 def test_theme_picker_and_dark_css_present(client):
     page = client.get("/")
     assert b'id="theme-picker"' in page.data

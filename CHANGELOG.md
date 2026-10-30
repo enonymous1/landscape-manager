@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.1.1 — 2026-10-30
+
+- Removed the hardcoded Flask `SECRET_KEY`. It now comes from
+  `LANDSCAPE_SECRET_KEY` when set, otherwise a random key is generated per
+  process start (sessions do not survive a restart without the env var).
+  Set the env var for any deployment where sessions should persist.
+
 ## 1.1.0 — 2026-10-30
 
 - Default business name generalized from "Sun & Shade Landscaping" to

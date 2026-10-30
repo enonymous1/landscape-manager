@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import os
+import secrets
 import sqlite3
 from datetime import date, timedelta
 
@@ -21,7 +23,14 @@ from .logic import (
 
 def create_app(test_config: dict | None = None) -> Flask:
     app = Flask(__name__)
-    app.config.from_mapping(SECRET_KEY="dev-only-change-me", DATABASE="landscape.db")
+    # No hardcoded secret: use LANDSCAPE_SECRET_KEY when set (stable across
+    # restarts, required for any real deployment), otherwise generate a random
+    # key per process start. Sessions therefore do not survive a restart
+    # without the env var, which is the safe default for a demo app.
+    app.config.from_mapping(
+        SECRET_KEY=os.environ.get("LANDSCAPE_SECRET_KEY") or secrets.token_hex(32),
+        DATABASE="landscape.db",
+    )
     if test_config:
         app.config.update(test_config)
 

@@ -52,6 +52,10 @@ PYTHONPATH=src python -m landscape_manager --demo
 The database file defaults to `landscape.db` in the working directory;
 override with `--db path/to/file.db` or `LANDSCAPE_DB`.
 
+For any deployment beyond a local demo, set `LANDSCAPE_SECRET_KEY` to a
+stable secret. Without it, a random key is generated on each start and
+sessions (flash messages) do not survive a restart.
+
 ## Tests
 
 ```bash

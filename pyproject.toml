@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "landscape-manager"
-version = "1.1.0"
+version = "1.1.1"
 description = "Generalized web app for running a landscaping business: clients, properties, services, jobs, quotes, and invoices."
 readme = "README.md"
 license = { text = "MIT" }
