@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "landscape-manager"
-version = "1.1.1"
+version = "1.2.0"
 description = "Generalized web app for running a landscaping business: clients, properties, services, jobs, quotes, and invoices."
 readme = "README.md"
 license = { text = "MIT" }
@@ -14,6 +14,7 @@ dependencies = ["Flask>=3.0"]
 
 [project.scripts]
 landscape-manager = "landscape_manager.__main__:main"
+landscape-manager-freeze = "landscape_manager.freeze:main"
 
 [project.optional-dependencies]
 dev = ["pytest>=8.0", "ruff>=0.6"]

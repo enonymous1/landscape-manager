@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Landscaping — Landscape Manager</title>
+<script>
+try { document.documentElement.dataset.theme = localStorage.getItem('landscape-theme') || 'auto'; } catch (e) {}
+</script>
+<link rel="stylesheet" href="../../static/style.css">
+</head>
+<body>
+<header>
+  <strong>Landscaping</strong>
+  <nav>
+    <a href="../../">Dashboard</a>
+    <a href="../../clients/">Clients</a>
+    <a href="../../jobs/">Jobs</a>
+    <a href="../../services/">Services</a>
+    <a href="../">Quotes</a>
+    <a href="../../invoices/">Invoices</a>
+    <a href="../../settings/">Settings</a>
+  </nav>
+  <label class="theme-picker">Theme
+    <select id="theme-picker" aria-label="Theme">
+      <option value="auto">Auto</option>
+      <option value="light">Light</option>
+      <option value="dark">Dark</option>
+    </select>
+  </label>
+</header><div class="static-banner">Static demo — browsing only. Forms are disabled and nothing you enter here is saved. Run the Flask app locally for the full, working version.</div>
+<main>
+
+
+
+
+<h1>New quote</h1>
+<form method="post" onsubmit="return false;">
+<label>Client <select name="client_id" required disabled=""><option value="1">Alex Rivera</option><option value="2">Jordan Patel</option><option value="3">Sam Whitfield</option></select></label>
+<label>Property <select name="property_id" disabled=""><option value="">— none —</option><option value="1">Alex Rivera — Home</option><option value="2">Jordan Patel — Home</option><option value="3">Sam Whitfield — Home</option></select></label>
+<label>Notes <textarea name="notes" disabled=""></textarea></label>
+<button type="submit" disabled="">Create quote</button>
+</form>
+<p>Then add line items on the quote page.</p>
+
+</main>
+<script>
+(function () {
+  var picker = document.getElementById('theme-picker');
+  if (!picker) return;
+  try { picker.value = localStorage.getItem('landscape-theme') || 'auto'; } catch (e) {}
+  picker.addEventListener('change', function () {
+    document.documentElement.dataset.theme = picker.value;
+    try { localStorage.setItem('landscape-theme', picker.value); } catch (e) {}
+  });
+})();
+</script>
+</body>
+</html>

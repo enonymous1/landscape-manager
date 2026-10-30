@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.2.0 — 2026-10-30
+
+- Frozen static demo for GitHub Pages: `landscape-manager freeze` (or
+  `landscape-manager-freeze`) boots a temporary database, seeds only the
+  fictional demo data, and writes a read-only site to `docs/` — 28 pages
+  plus `static/style.css` and `.nojekyll`. Internal links are rewritten to
+  relative paths so it works from a project Pages subpath, every page
+  carries a "Static demo" banner, and all form controls are disabled
+  (the theme picker, which is outside any form, still works). The freezer
+  takes no database argument, so real data cannot be frozen by mistake.
+  Re-run it before pushing after any app change, then enable Pages from
+  `main` / `docs` in the repo settings.
+
 ## 1.1.1 — 2026-10-30
 
 - Removed the hardcoded Flask `SECRET_KEY`. It now comes from

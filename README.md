@@ -56,6 +56,26 @@ For any deployment beyond a local demo, set `LANDSCAPE_SECRET_KEY` to a
 stable secret. Without it, a random key is generated on each start and
 sessions (flash messages) do not survive a restart.
 
+## Frozen demo for GitHub Pages
+
+The live app needs a server, but a read-only demo can be frozen to static
+HTML:
+
+```bash
+landscape-manager freeze
+# writes docs/ (28 pages + static assets)
+```
+
+Then, in the GitHub repo: Settings → Pages → Deploy from a branch →
+`main` / `docs`. The frozen site is browsing-only: a "Static demo" banner
+is shown, forms are disabled, and nothing is saved. Theme switching still
+works. Re-run `freeze` before pushing after any app change — `docs/` is
+generated output, not hand-edited.
+
+The freezer always uses a fresh temporary database with fictional demo
+data only. It takes no database argument, so real business data cannot be
+frozen by mistake.
+
 ## Tests
 
 ```bash

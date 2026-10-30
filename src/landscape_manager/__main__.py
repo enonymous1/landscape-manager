@@ -11,6 +11,14 @@ from .demo import seed_demo
 
 
 def main() -> None:
+    import sys
+
+    if len(sys.argv) > 1 and sys.argv[1] == "freeze":
+        from .freeze import main as freeze_main
+
+        sys.argv = [sys.argv[0]] + sys.argv[2:]
+        freeze_main()
+        return
     parser = argparse.ArgumentParser(description="Landscape Manager web app")
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=5000)

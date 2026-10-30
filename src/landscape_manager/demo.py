@@ -70,5 +70,24 @@ def seed_demo(conn: sqlite3.Connection, force: bool = False) -> bool:
             " VALUES (?, ?, ?, 1, ?)",
             (quote_id, service_ids[2], "Mulch Installation", to_cents("85.00")),
         )
+        if i == 0:
+            # One unpaid demo invoice, so the invoices pages and the
+            # dashboard's unpaid total are not empty in the frozen demo.
+            invoice_id = conn.execute(
+                "INSERT INTO invoices (client_id, property_id, quote_id, status, due_date, created_date)"
+                " VALUES (?, ?, ?, 'unpaid', ?, ?)",
+                (
+                    client_id,
+                    prop_id,
+                    quote_id,
+                    (today + timedelta(days=30)).isoformat(),
+                    today.isoformat(),
+                ),
+            ).lastrowid
+            conn.execute(
+                "INSERT INTO invoice_items (invoice_id, service_id, description, quantity, unit_price_cents)"
+                " VALUES (?, ?, ?, 1, ?)",
+                (invoice_id, service_ids[2], "Mulch Installation", to_cents("85.00")),
+            )
     conn.commit()
     return True

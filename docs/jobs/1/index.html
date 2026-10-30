@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Landscaping — Landscape Manager</title>
+<script>
+try { document.documentElement.dataset.theme = localStorage.getItem('landscape-theme') || 'auto'; } catch (e) {}
+</script>
+<link rel="stylesheet" href="../../static/style.css">
+</head>
+<body>
+<header>
+  <strong>Landscaping</strong>
+  <nav>
+    <a href="../../">Dashboard</a>
+    <a href="../../clients/">Clients</a>
+    <a href="../">Jobs</a>
+    <a href="../../services/">Services</a>
+    <a href="../../quotes/">Quotes</a>
+    <a href="../../invoices/">Invoices</a>
+    <a href="../../settings/">Settings</a>
+  </nav>
+  <label class="theme-picker">Theme
+    <select id="theme-picker" aria-label="Theme">
+      <option value="auto">Auto</option>
+      <option value="light">Light</option>
+      <option value="dark">Dark</option>
+    </select>
+  </label>
+</header><div class="static-banner">Static demo — browsing only. Forms are disabled and nothing you enter here is saved. Run the Flask app locally for the full, working version.</div>
+<main>
+
+
+
+
+<h1>Lawn Mowing</h1>
+<p>Alex Rivera — Home (12 Oak Hollow Lane)<br>
+Date: 2026-10-30 · Recurrence: weekly · Status: scheduled<br>
+Service price: $45.00</p>
+
+<form method="post" action="/jobs/1/status" onsubmit="return false;">
+<label>Change status <select name="status" disabled=""><option value="scheduled">Scheduled</option><option value="in_progress">In progress</option><option value="done">Done</option><option value="cancelled">Cancelled</option></select></label>
+<label><input type="checkbox" name="reschedule" value="1" disabled=""> When marking done, schedule the next recurring occurrence</label>
+<button type="submit" disabled="">Update job</button>
+</form>
+
+</main>
+<script>
+(function () {
+  var picker = document.getElementById('theme-picker');
+  if (!picker) return;
+  try { picker.value = localStorage.getItem('landscape-theme') || 'auto'; } catch (e) {}
+  picker.addEventListener('change', function () {
+    document.documentElement.dataset.theme = picker.value;
+    try { localStorage.setItem('landscape-theme', picker.value); } catch (e) {}
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Landscaping — Landscape Manager</title>
+<script>
+try { document.documentElement.dataset.theme = localStorage.getItem('landscape-theme') || 'auto'; } catch (e) {}
+</script>
+<link rel="stylesheet" href="../static/style.css">
+</head>
+<body>
+<header>
+  <strong>Landscaping</strong>
+  <nav>
+    <a href="../">Dashboard</a>
+    <a href="../clients/">Clients</a>
+    <a href="./">Jobs</a>
+    <a href="../services/">Services</a>
+    <a href="../quotes/">Quotes</a>
+    <a href="../invoices/">Invoices</a>
+    <a href="../settings/">Settings</a>
+  </nav>
+  <label class="theme-picker">Theme
+    <select id="theme-picker" aria-label="Theme">
+      <option value="auto">Auto</option>
+      <option value="light">Light</option>
+      <option value="dark">Dark</option>
+    </select>
+  </label>
+</header><div class="static-banner">Static demo — browsing only. Forms are disabled and nothing you enter here is saved. Run the Flask app locally for the full, working version.</div>
+<main>
+
+
+
+
+<h1>Jobs</h1>
+<p><a class="btn" href="new/">Schedule a job</a>
+<a href="./">All</a> · <a href="./">Scheduled</a> · <a href="./">Done</a></p>
+<table><tr><th>Date</th><th>Service</th><th>Client</th><th>Property</th><th>Status</th></tr>
+<tr><td><a href="1/">2026-10-30</a></td><td>Lawn Mowing</td><td>Alex Rivera</td><td>Home</td><td>scheduled</td></tr><tr><td><a href="2/">2026-10-31</a></td><td>Hedge Trimming</td><td>Jordan Patel</td><td>Home</td><td>scheduled</td></tr><tr><td><a href="3/">2026-11-01</a></td><td>Mulch Installation</td><td>Sam Whitfield</td><td>Home</td><td>scheduled</td></tr>
+</table>
+
+</main>
+<script>
+(function () {
+  var picker = document.getElementById('theme-picker');
+  if (!picker) return;
+  try { picker.value = localStorage.getItem('landscape-theme') || 'auto'; } catch (e) {}
+  picker.addEventListener('change', function () {
+    document.documentElement.dataset.theme = picker.value;
+    try { localStorage.setItem('landscape-theme', picker.value); } catch (e) {}
+  });
+})();
+</script>
+</body>
+</html>
