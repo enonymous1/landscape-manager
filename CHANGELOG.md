@@ -1,5 +1,50 @@
 # Changelog
 
+## 1.4.0 — 2026-10-31
+
+Staff-review fixes (no feature changes, no behaviour change for valid
+input):
+
+- New `validation.py`: missing fields, bad prices, bad quantities, and
+  invalid statuses/recurrences now flash a message and redirect, instead
+  of raising `KeyError`/`ValueError` into a bare 500. The status and
+  recurrence constants in `logic.py` are now actually enforced.
+- Money: `to_cents` now parses via `Decimal` and rounds half-up
+  (`"45.999"` -> 4600, previously truncated to 4599), and rejects
+  malformed input with `ValueError` instead of a raw `int()` crash.
+- Performance: dashboard and invoice list no longer do one query per
+  invoice (N+1). `db.invoice_totals` fetches all items in one query
+  and totals them in Python, preserving per-line rounding.
+- DRY: quote and invoice detail pages now share
+  `templates/_document_items.html`. This also fixes a real bug: the
+  template previously truncated line totals with `|int`, while
+  `logic.line_total` rounds — row totals and document totals can no
+  longer disagree.
+- Indexes added for the FK / date columns list pages actually filter
+  and join on (new databases only — see `db.py` on migrations).
+- Business constants (`INVOICE_DUE_DAYS`, `UPCOMING_DAYS`,
+  `DEFAULT_BUSINESS_NAME`) moved to one place, shared by routes and
+  the demo seed, instead of literals in three files.
+- Freeze safety: `freeze` now refuses a filesystem root, the home
+  directory, and any directory containing `.git` — it deletes its
+  output directory before writing, so a typo used to be data loss.
+- `__main__` no longer mutates `sys.argv` to dispatch `freeze`;
+  `freeze.main(argv)` takes arguments explicitly.
+- Tests: shared app fixture moved to `tests/conftest.py` (it was
+  duplicated per module in spirit); new `tests/test_review_fixes.py`
+  pins every fix above. 404 pages now render a template instead of
+  plain text.
+- README rewritten (Description, Prerequisites, Installation, Local
+  Development, Deployment) with an architecture diagram
+  (`assets/architecture.svg`) and a visual-asset plan. Screenshots
+  are deliberately not faked — see the README section for the exact
+  assets to capture next.
+- Not fixed in this version, and why: no CSRF protection, no auth,
+  no pagination, no DB migrations, and no blueprint split — each is
+  a larger, dependency- or schema-changing decision, listed in the
+  README's Architecture and Deployment sections as future work rather
+  than half-implemented here.
+
 ## 1.3.0 — 2026-10-30
 
 - GitHub Pages is now CI-generated, replacing the manually committed

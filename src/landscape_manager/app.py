@@ -1,4 +1,14 @@
-"""Flask app factory for landscape-manager."""
+"""Flask app factory for landscape-manager.
+
+Architecture note: this module is deliberately the thinnest layer that
+can hold routes — pure rules live in :mod:`logic`, storage in :mod:`db`,
+and form validation in :mod:`validation`. It is still one 500+ line
+file, which is the largest remaining structural smell (see the review
+notes): the next refactor, when routes grow again, is to split it into
+blueprints (clients, jobs, documents, settings) behind a service layer,
+not to add more routes here. Nothing in this file should compute money
+or dates directly when ``logic`` already does.
+"""
 
 from __future__ import annotations
 
@@ -9,19 +19,41 @@ from datetime import date, timedelta
 
 from flask import Flask, flash, g, redirect, render_template, request, url_for
 
-from .db import connect, get_setting, init_db
+from .db import DEFAULT_BUSINESS_NAME, connect, get_setting, init_db, invoice_totals
 from .demo import seed_demo
 from .logic import (
+    INVOICE_DUE_DAYS,
+    JOB_STATUSES,
+    QUOTE_STATUSES,
+    RECURRENCES,
+    UPCOMING_DAYS,
     document_total,
     format_money,
     is_overdue_invoice,
     is_overdue_job,
+    line_total,
     next_recurrence,
-    to_cents,
 )
+from .validation import (
+    optional_text,
+    parse_money_cents,
+    parse_quantity,
+    require_int,
+    require_text,
+    validate_enum,
+)
+
+#: Business-rule constants live in ``logic`` (see there) and are imported
+#: above, so routes, the demo seed, and tests cannot drift apart.
 
 
 def create_app(test_config: dict | None = None) -> Flask:
+    """Build the Flask app.
+
+    ``test_config`` overrides (e.g. ``DATABASE``) are for tests only;
+    production configuration comes from the environment (see
+    ``LANDSCAPE_SECRET_KEY`` below and ``LANDSCAPE_DB`` in ``__main__``).
+    """
     app = Flask(__name__)
     # No hardcoded secret: use LANDSCAPE_SECRET_KEY when set (stable across
     # restarts, required for any real deployment), otherwise generate a random
@@ -46,15 +78,31 @@ def create_app(test_config: dict | None = None) -> Flask:
         if db is not None:
             db.close()
 
+    @app.errorhandler(404)
+    def not_found(_error):
+        # Detail routes previously returned plain text ("Client not found")
+        # while list pages rendered full templates — inconsistent, and a
+        # dead end for the user. All unknown routes now get this page.
+        return render_template("404.html"), 404
+
     @app.context_processor
     def inject_globals():
         try:
-            business = get_setting(get_db(), "business_name", "Landscaping")
+            business = get_setting(get_db(), "business_name", DEFAULT_BUSINESS_NAME)
         except sqlite3.Error:
-            business = "Landscaping"
+            # The database may not exist yet on the very first request;
+            # fall back to the default rather than failing the page.
+            business = DEFAULT_BUSINESS_NAME
         return {"business_name": business, "format_money": format_money}
 
     def parse_date(text: str) -> date | None:
+        """Parse an ISO ``YYYY-MM-DD`` date, or ``None`` if malformed.
+
+        Returns ``None`` instead of raising so stored dates that are
+        blank (e.g. an invoice with no due date) and bad form input
+        both flow through the ``is_overdue_*`` helpers, which treat
+        ``None`` as "not overdue".
+        """
         try:
             y, m, d = (int(p) for p in text.split("-"))
             return date(y, m, d)
@@ -62,33 +110,55 @@ def create_app(test_config: dict | None = None) -> Flask:
             return None
 
     def items_for(table: str, doc_id: int):
+        """Line items for a quote or invoice, each with its line total.
+
+        ``table`` is an internal constant only, never user input — it is
+        whitelisted here so this function can never become an SQL
+        injection vector if a future caller passes it something else.
+        The template previously recomputed each line total with
+        ``(quantity * price)|int``, which *truncates* (499.5 -> 499)
+        while ``logic.line_total`` *rounds* (499.5 -> 500). Computing
+        the total once, here, makes the row and the document total agree.
+        """
+        if table not in ("quote_items", "invoice_items"):
+            raise ValueError(f"Unknown item table: {table!r}.")
         prefix = "quote" if table == "quote_items" else "invoice"
         rows = (
             get_db()
             .execute(f"SELECT * FROM {table} WHERE {prefix}_id = ? ORDER BY id", (doc_id,))
             .fetchall()
         )
-        return [dict(r) for r in rows]
+        items = [dict(r) for r in rows]
+        for item in items:
+            item["line_total"] = line_total(item["quantity"], item["unit_price_cents"])
+        return items
 
-    def add_item(table: str, doc_id: int):
+    def add_item(table: str, doc_id: int) -> bool:
+        """Add one line item from the detail-page form. Returns False (after
+        flashing the error) instead of crashing on bad input."""
         db = get_db()
-        service_id = request.form.get("service_id") or None
-        description = request.form.get("description", "")
-        price = request.form.get("unit_price", "")
-        if service_id and not description:
-            row = db.execute("SELECT name FROM services WHERE id = ?", (service_id,)).fetchone()
-            description = row["name"] if row else ""
-        if service_id and not price:
-            row = db.execute(
-                "SELECT price_cents FROM services WHERE id = ?", (service_id,)
-            ).fetchone()
-            price_cents = row["price_cents"] if row else 0
-        else:
-            price_cents = to_cents(price or "0")
         try:
-            quantity = float(request.form.get("quantity", "1"))
-        except ValueError:
-            quantity = 1
+            service_id = request.form.get("service_id") or None
+            if service_id is not None:
+                # Reject a non-numeric service id early; the lookup below
+                # would otherwise silently treat it as "no service".
+                service_id = str(require_int(request.form, "service_id"))
+            description = optional_text(request.form, "description")
+            price = optional_text(request.form, "unit_price")
+            if service_id and not description:
+                row = db.execute("SELECT name FROM services WHERE id = ?", (service_id,)).fetchone()
+                description = row["name"] if row else ""
+            if service_id and not price:
+                row = db.execute(
+                    "SELECT price_cents FROM services WHERE id = ?", (service_id,)
+                ).fetchone()
+                price_cents = row["price_cents"] if row else 0
+            else:
+                price_cents = parse_money_cents(request.form, "unit_price")
+            quantity = parse_quantity(request.form)
+        except ValueError as exc:
+            flash(str(exc))
+            return False
         prefix = "quote" if table == "quote_items" else "invoice"
         db.execute(
             f"INSERT INTO {table} ({prefix}_id, service_id, description, quantity, unit_price_cents)"
@@ -96,6 +166,7 @@ def create_app(test_config: dict | None = None) -> Flask:
             (doc_id, service_id, description, quantity, price_cents),
         )
         db.commit()
+        return True
 
     @app.route("/")
     def dashboard():
@@ -119,12 +190,16 @@ def create_app(test_config: dict | None = None) -> Flask:
             j
             for j in jobs
             if j["status"] == "scheduled"
-            and today.isoformat() < j["scheduled_date"] <= (today + timedelta(days=7)).isoformat()
+            and today.isoformat()
+            < j["scheduled_date"]
+            <= (today + timedelta(days=UPCOMING_DAYS)).isoformat()
         ]
         overdue = [j for j in jobs if j["overdue"]]
+        # One batched totals query, not one per invoice (see db.invoice_totals).
+        totals = invoice_totals(db)
         unpaid_total = sum(
-            document_total(items_for("invoice_items", inv["id"]))
-            for inv in db.execute("SELECT * FROM invoices WHERE status = 'unpaid'").fetchall()
+            totals.get(inv["id"], 0)
+            for inv in db.execute("SELECT id FROM invoices WHERE status = 'unpaid'").fetchall()
         )
         counts = {
             "clients": db.execute("SELECT COUNT(*) AS n FROM clients").fetchone()["n"],
@@ -282,13 +357,19 @@ def create_app(test_config: dict | None = None) -> Flask:
     def services():
         db = get_db()
         if request.method == "POST":
+            try:
+                name = require_text(request.form, "name")
+                price_cents = parse_money_cents(request.form, "price")
+            except ValueError as exc:
+                flash(str(exc))
+                return redirect(url_for("services"))
             db.execute(
                 "INSERT INTO services (name, description, price_cents, unit) VALUES (?, ?, ?, ?)",
                 (
-                    request.form["name"],
-                    request.form.get("description", ""),
-                    to_cents(request.form.get("price", "0")),
-                    request.form.get("unit", "per visit"),
+                    name,
+                    optional_text(request.form, "description"),
+                    price_cents,
+                    optional_text(request.form, "unit", "per visit"),
                 ),
             )
             db.commit()
@@ -322,17 +403,38 @@ def create_app(test_config: dict | None = None) -> Flask:
         ).fetchall()
         services = db.execute("SELECT * FROM services ORDER BY name").fetchall()
         if request.method == "POST":
-            cur = db.execute(
-                "INSERT INTO jobs (property_id, service_id, scheduled_date, recurrence, status, notes) VALUES (?, ?, ?, ?, ?, ?)",
-                (
-                    request.form["property_id"],
-                    request.form["service_id"],
-                    request.form["scheduled_date"],
-                    request.form.get("recurrence", "none"),
-                    request.form.get("status", "scheduled"),
-                    request.form.get("notes", ""),
-                ),
-            )
+            try:
+                property_id = require_int(request.form, "property_id")
+                service_id = require_int(request.form, "service_id")
+                scheduled = require_text(request.form, "scheduled_date")
+                if parse_date(scheduled) is None:
+                    raise ValueError("Scheduled date must be a valid date.")
+                recurrence = validate_enum(
+                    request.form.get("recurrence", "none"), RECURRENCES, "recurrence"
+                )
+                status = validate_enum(
+                    request.form.get("status", "scheduled"), JOB_STATUSES, "status"
+                )
+            except ValueError as exc:
+                flash(str(exc))
+                return redirect(url_for("job_new"))
+            try:
+                cur = db.execute(
+                    "INSERT INTO jobs (property_id, service_id, scheduled_date, recurrence, status, notes) VALUES (?, ?, ?, ?, ?, ?)",
+                    (
+                        property_id,
+                        service_id,
+                        scheduled,
+                        recurrence,
+                        status,
+                        optional_text(request.form, "notes"),
+                    ),
+                )
+            except sqlite3.IntegrityError:
+                # A property/service id that does not exist: previously
+                # a bare 500 from SQLite. Flash and re-show the form.
+                flash("That property or service does not exist.")
+                return redirect(url_for("job_new"))
             db.commit()
             return redirect(url_for("job_detail", job_id=cur.lastrowid))
         return render_template("job_form.html", job=None, properties=props, services=services)
@@ -358,9 +460,19 @@ def create_app(test_config: dict | None = None) -> Flask:
         job = db.execute("SELECT * FROM jobs WHERE id = ?", (job_id,)).fetchone()
         if job is None:
             return "Job not found", 404
-        new_status = request.form["status"]
+        try:
+            # Previously any string was stored as a status, including
+            # typos and crafted values no other page understands.
+            new_status = validate_enum(request.form.get("status", ""), JOB_STATUSES, "status")
+        except ValueError as exc:
+            flash(str(exc))
+            return redirect(url_for("job_detail", job_id=job_id))
         db.execute("UPDATE jobs SET status = ? WHERE id = ?", (new_status, job_id))
         if new_status == "done" and request.form.get("reschedule") == "1":
+            # Rescheduling is deliberately opt-in (the checkbox), not
+            # automatic: completing a job should not silently create
+            # work the business did not ask for. next_recurrence returns
+            # None for one-off jobs, so this branch is a no-op for them.
             nxt = next_recurrence(parse_date(job["scheduled_date"]), job["recurrence"])
             if nxt is not None:
                 db.execute(
@@ -422,9 +534,12 @@ def create_app(test_config: dict | None = None) -> Flask:
             if "add_item" in request.form:
                 add_item("quote_items", quote_id)
             elif "status" in request.form:
-                db.execute(
-                    "UPDATE quotes SET status = ? WHERE id = ?", (request.form["status"], quote_id)
-                )
+                try:
+                    status = validate_enum(request.form["status"], QUOTE_STATUSES, "status")
+                except ValueError as exc:
+                    flash(str(exc))
+                    return redirect(url_for("quote_detail", quote_id=quote_id))
+                db.execute("UPDATE quotes SET status = ? WHERE id = ?", (status, quote_id))
                 db.commit()
             return redirect(url_for("quote_detail", quote_id=quote_id))
         items = items_for("quote_items", quote_id)
@@ -449,7 +564,7 @@ def create_app(test_config: dict | None = None) -> Flask:
                 quote["client_id"],
                 quote["property_id"],
                 quote_id,
-                (date.today() + timedelta(days=30)).isoformat(),
+                (date.today() + timedelta(days=INVOICE_DUE_DAYS)).isoformat(),
                 date.today().isoformat(),
             ),
         )
@@ -471,19 +586,17 @@ def create_app(test_config: dict | None = None) -> Flask:
     @app.route("/invoices")
     def invoices():
         today = date.today()
+        db = get_db()
+        totals = invoice_totals(db)
         enriched = []
-        for row in (
-            get_db()
-            .execute(
-                "SELECT i.*, c.name AS client_name FROM invoices i JOIN clients c ON c.id = i.client_id ORDER BY i.id DESC"
-            )
-            .fetchall()
-        ):
+        for row in db.execute(
+            "SELECT i.*, c.name AS client_name FROM invoices i JOIN clients c ON c.id = i.client_id ORDER BY i.id DESC"
+        ).fetchall():
             item = dict(row)
             item["overdue"] = is_overdue_invoice(
                 parse_date(item["due_date"]), item["status"], today
             )
-            item["total"] = document_total(items_for("invoice_items", item["id"]))
+            item["total"] = totals.get(item["id"], 0)
             enriched.append(item)
         return render_template("invoices.html", invoices=enriched)
 

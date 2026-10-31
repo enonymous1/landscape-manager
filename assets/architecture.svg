@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="820" height="340" viewBox="0 0 820 340" role="img" aria-label="Landscape Manager architecture diagram">
+  <title>Landscape Manager architecture</title>
+  <style>
+    .box { fill: #f6f8fa; stroke: #24292f; stroke-width: 1.5; rx: 10; }
+    .accent { fill: #e6f0ff; stroke: #0969da; stroke-width: 1.5; rx: 10; }
+    .muted { fill: #fff8e6; stroke: #9a6700; stroke-width: 1.5; rx: 10; }
+    text { font-family: system-ui, sans-serif; font-size: 14px; fill: #24292f; }
+    .title { font-weight: 700; font-size: 15px; }
+    .small { font-size: 12px; fill: #57606a; }
+    line, path { stroke: #24292f; stroke-width: 1.5; }
+  </style>
+  <rect class="box" x="20" y="40" width="170" height="70" />
+  <text class="title" x="105" y="70" text-anchor="middle">Browser</text>
+  <text class="small" x="105" y="90" text-anchor="middle">Jinja templates + CSS</text>
+  <rect class="accent" x="260" y="40" width="200" height="70" />
+  <text class="title" x="360" y="70" text-anchor="middle">Flask app factory</text>
+  <text class="small" x="360" y="90" text-anchor="middle">app.py routes only</text>
+  <rect class="box" x="530" y="40" width="200" height="70" />
+  <text class="title" x="630" y="70" text-anchor="middle">SQLite (stdlib)</text>
+  <text class="small" x="630" y="90" text-anchor="middle">db.py, no ORM</text>
+  <line x1="190" y1="75" x2="260" y2="75" marker-end="url(#a)" />
+  <line x1="460" y1="75" x2="530" y2="75" />
+  <rect class="box" x="260" y="150" width="200" height="70" />
+  <text class="title" x="360" y="180" text-anchor="middle">Pure rules</text>
+  <text class="small" x="360" y="200" text-anchor="middle">logic.py + validation.py</text>
+  <line x1="360" y1="110" x2="360" y2="150" />
+  <text class="small" x="375" y="135">money, recurrence, validation</text>
+  <rect class="muted" x="20" y="250" width="380" height="70" />
+  <text class="title" x="210" y="280" text-anchor="middle">GitHub Actions (Pages)</text>
+  <text class="small" x="210" y="300" text-anchor="middle">tests → freeze → deploy-pages</text>
+  <rect class="muted" x="440" y="250" width="290" height="70" />
+  <text class="title" x="585" y="280" text-anchor="middle">Frozen static demo</text>
+  <text class="small" x="585" y="300" text-anchor="middle">read-only, demo data only</text>
+  <line x1="400" y1="285" x2="440" y2="285" />
+  <defs><marker id="a" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#24292f" /></marker></defs>
+</svg>

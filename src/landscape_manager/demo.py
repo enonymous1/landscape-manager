@@ -9,7 +9,7 @@ from __future__ import annotations
 import sqlite3
 from datetime import date, timedelta
 
-from .logic import to_cents
+from .logic import INVOICE_DUE_DAYS, to_cents
 
 SERVICES = [
     ("Lawn Mowing", "Mow, trim edges, and blow off hard surfaces.", "45.00", "per visit"),
@@ -80,7 +80,7 @@ def seed_demo(conn: sqlite3.Connection, force: bool = False) -> bool:
                     client_id,
                     prop_id,
                     quote_id,
-                    (today + timedelta(days=30)).isoformat(),
+                    (today + timedelta(days=INVOICE_DUE_DAYS)).isoformat(),
                     today.isoformat(),
                 ),
             ).lastrowid

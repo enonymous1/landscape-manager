@@ -1,8 +1,23 @@
-"""SQLite storage for landscape-manager (stdlib only, no ORM)."""
+"""SQLite storage for landscape-manager (stdlib only, no ORM).
+
+Schema note, and the reason this module has no migrations yet: the schema
+is applied with ``CREATE TABLE IF NOT EXISTS``, so it only helps a fresh
+database. Adding a column or index later does *not* change an existing
+``landscape.db``. That is acceptable for a local-first v1, but it is the
+first thing to fix before any schema change ships (see the review notes
+in the README's architecture section): introduce a ``PRAGMA user_version``
+migration step, or existing users will silently run the old schema.
+"""
 
 from __future__ import annotations
 
 import sqlite3
+
+from .logic import line_total
+
+#: Default shown in the header until Settings changes it. Defined here so
+#: the app factory and the schema seed cannot drift apart.
+DEFAULT_BUSINESS_NAME = "Landscaping"
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS settings (
@@ -74,6 +89,17 @@ CREATE TABLE IF NOT EXISTS invoice_items (
     quantity REAL NOT NULL DEFAULT 1,
     unit_price_cents INTEGER NOT NULL DEFAULT 0
 );
+-- Indexes for the queries the app actually runs: list pages order/filter
+-- by these columns, and the dashboard joins on them. Without them every
+-- list page is a full table scan; with a few hundred jobs that is fine,
+-- with a few thousand it is not. New databases only (see module docstring).
+CREATE INDEX IF NOT EXISTS idx_properties_client ON properties(client_id);
+CREATE INDEX IF NOT EXISTS idx_jobs_property ON jobs(property_id);
+CREATE INDEX IF NOT EXISTS idx_jobs_scheduled ON jobs(scheduled_date);
+CREATE INDEX IF NOT EXISTS idx_quotes_client ON quotes(client_id);
+CREATE INDEX IF NOT EXISTS idx_quote_items_quote ON quote_items(quote_id);
+CREATE INDEX IF NOT EXISTS idx_invoices_client ON invoices(client_id);
+CREATE INDEX IF NOT EXISTS idx_invoice_items_invoice ON invoice_items(invoice_id);
 """
 
 
@@ -88,9 +114,30 @@ def init_db(conn: sqlite3.Connection) -> None:
     conn.executescript(SCHEMA)
     conn.execute(
         "INSERT OR IGNORE INTO settings (key, value) VALUES ('business_name', ?)",
-        ("Landscaping",),
+        (DEFAULT_BUSINESS_NAME,),
     )
     conn.commit()
+
+
+def invoice_totals(conn: sqlite3.Connection) -> dict[int, int]:
+    """Total (integer cents) per invoice, computed with a single query.
+
+    The old dashboard and invoice-list code called ``items_for`` once per
+    invoice — the classic N+1 query pattern: one query for the invoices,
+    then one more per invoice to total its items. This fetches all items
+    in one query and totals them in Python, so per-line rounding matches
+    :func:`landscape_manager.logic.line_total` exactly (a SQL
+    ``SUM(quantity * unit_price_cents)`` would round only the grand
+    total, and could differ by a cent on fractional quantities).
+    Returns ``{invoice_id: total_cents}``; invoices with no items are
+    absent, so callers should use ``.get(invoice_id, 0)``.
+    """
+    totals: dict[int, int] = {}
+    for row in conn.execute("SELECT invoice_id, quantity, unit_price_cents FROM invoice_items"):
+        totals[row["invoice_id"]] = totals.get(row["invoice_id"], 0) + line_total(
+            row["quantity"], row["unit_price_cents"]
+        )
+    return totals
 
 
 def get_setting(conn: sqlite3.Connection, key: str, default: str = "") -> str:

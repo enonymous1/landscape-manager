@@ -8,24 +8,36 @@ from __future__ import annotations
 
 import calendar
 from datetime import date, timedelta
+from decimal import ROUND_HALF_UP, Decimal, InvalidOperation
 
 
 def to_cents(amount: str | float) -> int:
-    """Convert a dollar amount (``"45.50"``, ``45.5``, ``45``) to integer cents."""
+    """Convert a dollar amount (``"45.50"``, ``45.5``, ``45``) to integer cents.
+
+    Money is stored as integer cents, never as a float: binary floats
+    cannot represent most decimal prices exactly (``0.1 + 0.2 != 0.3``),
+    so float totals drift by cents over many line items. Parsing goes
+    through ``Decimal`` and rounds half-up to the nearest cent, so
+    ``"45.999"`` becomes 4600, not 4599 as the old string-slicing code
+    produced. Malformed input raises ``ValueError`` (callers turn it
+    into a flashed form error) instead of crashing with a raw
+    ``int()`` error. An empty string is 0, preserving the old
+    "blank price" behaviour of the service/item forms.
+    """
+    if isinstance(amount, bool):
+        raise TypeError("Amount must be a number, not a boolean.")
     if isinstance(amount, int):
         return amount * 100
-    text = str(amount).strip().replace("$", "").replace(",", "")
+    text = str(amount).strip().replace("$", "").replace(",", "").strip()
     if not text:
         return 0
-    negative = text.startswith("-")
-    text = text.lstrip("-")
-    if "." in text:
-        dollars, cents = text.split(".", 1)
-        cents = (cents + "00")[:2]
-    else:
-        dollars, cents = text, "00"
-    total = int(dollars or 0) * 100 + int(cents or 0)
-    return -total if negative else total
+    try:
+        value = Decimal(text)
+    except InvalidOperation:
+        raise ValueError(f"Not a valid dollar amount: {amount!r}.") from None
+    if not value.is_finite():
+        raise ValueError(f"Not a valid dollar amount: {amount!r}.")
+    return int((value * 100).quantize(Decimal(1), rounding=ROUND_HALF_UP))
 
 
 def format_money(cents: int) -> str:
@@ -77,3 +89,11 @@ JOB_STATUSES = ("scheduled", "in_progress", "done", "cancelled")
 QUOTE_STATUSES = ("draft", "sent", "accepted", "declined")
 INVOICE_STATUSES = ("unpaid", "paid", "overdue")
 RECURRENCES = ("none", "weekly", "biweekly", "monthly")
+
+#: Business rules that used to be literals buried in routes and the demo
+#: seed. They live here, with the other pure rules, so a change is one
+#: edit and every caller (app, demo seed, tests) agrees.
+#: An invoice created from a quote is due this many days after creation.
+INVOICE_DUE_DAYS = 30
+#: The dashboard's "upcoming" window, in days.
+UPCOMING_DAYS = 7

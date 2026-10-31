@@ -199,9 +199,24 @@ def process_page(html: str, page_route: str, frozen: set[str]) -> str:
 
 
 def freeze(output_dir: str | Path) -> list[Path]:
-    """Freeze the demo app into ``output_dir``. Returns written files."""
+    """Freeze the demo app into ``output_dir``. Returns written files.
+
+    Safety guard, and the reason it exists: the next lines delete the
+    output directory outright (``shutil.rmtree``) before writing. A
+    typo on the command line — ``freeze /``, ``freeze ~``, or a folder
+    that is actually a checked-out repo — would otherwise destroy data
+    that is not the frozen demo. Refusing those paths turns a typo
+    into an error instead of data loss.
+    """
     output = Path(output_dir)
-    if output.exists():
+    resolved = output.resolve()
+    if resolved == Path(resolved.anchor) or resolved == Path.home():
+        raise ValueError(
+            f"Refusing to freeze into {output}: that would delete a system or home directory."
+        )
+    if (resolved / ".git").exists():
+        raise ValueError(f"Refusing to freeze into {output}: it contains a .git directory.")
+    if resolved.exists():
         shutil.rmtree(output)
     output.mkdir(parents=True)
     with tempfile.TemporaryDirectory() as tmp:
@@ -233,12 +248,12 @@ def freeze(output_dir: str | Path) -> list[Path]:
     return written
 
 
-def main() -> None:
+def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(description="Freeze a static demo for GitHub Pages")
     parser.add_argument(
         "output", nargs="?", default="docs", help="Output directory (default: docs)"
     )
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
     written = freeze(args.output)
     print(f"Froze {len(written)} files into {args.output}/")
 

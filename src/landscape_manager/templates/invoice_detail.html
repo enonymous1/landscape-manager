@@ -2,19 +2,7 @@
 {% block content %}
 <h1>Invoice #{{ invoice.id }} — {{ invoice.client_name }}</h1>
 <p>Status: {{ invoice.status }} · Due: {{ invoice.due_date }} · Created: {{ invoice.created_date }}</p>
-<table><tr><th>Description</th><th>Qty</th><th>Unit price</th><th>Total</th></tr>
-{% for i in items %}<tr><td>{{ i.description }}</td><td>{{ i.quantity }}</td><td>{{ format_money(i.unit_price_cents) }}</td><td>{{ format_money((i.quantity * i.unit_price_cents)|int) }}</td></tr>{% endfor %}
-<tr><td colspan="3"><strong>Total</strong></td><td><strong>{{ format_money(total) }}</strong></td></tr>
-</table>
-<h2>Add line item</h2>
-<form method="post">
-<input type="hidden" name="add_item" value="1">
-<label>Service <select name="service_id"><option value="">— custom —</option>{% for s in services %}<option value="{{ s.id }}">{{ s.name }} — {{ format_money(s.price_cents) }}</option>{% endfor %}</select></label>
-<label>Description <input name="description"></label>
-<label>Quantity <input name="quantity" value="1"></label>
-<label>Unit price (dollars, blank = service price) <input name="unit_price"></label>
-<button type="submit">Add item</button>
-</form>
+{% include "_document_items.html" %}
 {% if invoice.status != 'paid' %}
 <form method="post"><input type="hidden" name="mark_paid" value="1"><button type="submit">Mark paid</button></form>
 {% endif %}
